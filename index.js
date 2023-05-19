@@ -33,10 +33,13 @@ async function run() {
       const category = req.params.category;
       console.log(category)
       if (category === "Marvel" || category === "DC" || category === "Transformers") {
-        const result = await toysCollections.find({subCategory:category}).limit(3).toArray();
+        const result = await toysCollections.find({subCategory:category}).limit(6).toArray();
         return res.send(result)
       }
-
+    })
+    app.get("/allToys",async(req,res)=>{
+      const result=await toysCollections.find().toArray();
+      res.send(result);
     })
 
     app.get("/toy/:id", async (req, res) => {
@@ -51,6 +54,7 @@ async function run() {
       const result=await toysCollections.insertOne(toy);
       res.send(result)
     })
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

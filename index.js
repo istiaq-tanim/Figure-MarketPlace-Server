@@ -17,27 +17,26 @@ const client = new MongoClient(uri, {
     strict: true,
     deprecationErrors: true,
   },
-  useNewUrlParser:true,
+  useNewUrlParser: true,
   useUnifiedTopology: true,
-  maxPoolSize:10,
+  maxPoolSize: 10,
 });
 
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-     client.connect((error)=>{
-      if(error)
-      {
+    client.connect((error) => {
+      if (error) {
         console.log(error)
         return;
       }
-     });
+    });
     const toysCollections = client.db("actionDB").collection("toys");
 
     // const indexKeys = { name: 1 }; 
     // const indexOptions = { name: "name" }; 
     // const result = await toysCollections.createIndex(indexKeys, indexOptions);
-    
+
     app.get("/allToys", async (req, res) => {
       const result = await toysCollections.find().toArray();
       res.send(result);
@@ -50,7 +49,7 @@ async function run() {
         return res.send(result)
       }
     })
- 
+
     app.get("/toy/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -71,27 +70,39 @@ async function run() {
       const result = await toysCollections.findOne(query);
       res.send(result)
     })
-    app.get("/myToys", async (req, res) => {
+    app.get("/myToys/:text", async (req, res) => {
       console.log(req.query.email)
+      const text = req.params.text;
       let query = {}
       if (req.query?.email) {
         query = { email: req.query.email }
       }
-      const result = await toysCollections.find(query).sort({price:1}).toArray();
+      let sorting = {}
+      if (text == "low") {
+        sorting = { price: 1 }
+      }
+      else if (text == "high") {
+        sorting = { price: -1 }
+      }
+      else {
+        return res.send({ error: "error" })
+      }
+
+      const result = await toysCollections.find(query).sort(sorting).toArray();
       res.send(result)
     })
-    app.get("/searchItem/:name",async(req,res)=>{
-      const searchName=req.params.name;
+    app.get("/searchItem/:name", async (req, res) => {
+      const searchName = req.params.name;
       const result = await toysCollections
-      .find({
-        $or: [
-          { name: { $regex: searchName, $options: "i" } }
-        ],
-      })
-      .toArray();
-    res.send(result);
+        .find({
+          $or: [
+            { name: { $regex: searchName, $options: "i" } }
+          ],
+        })
+        .toArray();
+      res.send(result);
     })
-  
+
 
     app.post("/addToy", async (req, res) => {
       const toy = req.body;

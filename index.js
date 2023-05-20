@@ -25,6 +25,10 @@ async function run() {
     await client.connect();
     const toysCollections = client.db("actionDB").collection("toys");
 
+    const indexKeys = { name: 1 }; 
+    const indexOptions = { name: "name" }; 
+    const result = await toysCollections.createIndex(indexKeys, indexOptions);
+
     app.get("/toys/:category", async (req, res) => {
       const category = req.params.category;
       if (category === "Marvel" || category === "DC" || category === "Transformers") {
@@ -66,7 +70,18 @@ async function run() {
       const result = await toysCollections.find(query).toArray();
       res.send(result)
     })
-
+    app.get("/searchItem/:name",async(req,res)=>{
+      const searchName=req.params.name;
+      const result = await toysCollections
+      .find({
+        $or: [
+          { name: { $regex: searchName, $options: "i" } }
+        ],
+      })
+      .toArray();
+    res.send(result);
+    })
+  
 
     app.post("/addToy", async (req, res) => {
       const toy = req.body;
@@ -81,16 +96,16 @@ async function run() {
       res.send(result)
 
     })
-    app.put("/update/:id",async(req,res)=>{
-      const id=req.params.id;
+    app.put("/update/:id", async (req, res) => {
+      const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
-      const toy=req.body;
+      const toy = req.body;
       const options = { upsert: true };
       const updateDoc = {
         $set: {
           price: toy.price,
-          quantity:toy.quantity,
-          description:toy.description
+          availableQuantity: toy.quantity,
+          description: toy.description
         },
       };
 

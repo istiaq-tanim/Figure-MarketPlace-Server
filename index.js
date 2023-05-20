@@ -16,18 +16,32 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
+  useNewUrlParser:true,
+  useUnifiedTopology: true,
+  maxPoolSize:10,
 });
 
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+     client.connect((error)=>{
+      if(error)
+      {
+        console.log(error)
+        return;
+      }
+     });
     const toysCollections = client.db("actionDB").collection("toys");
 
-    const indexKeys = { name: 1 }; 
-    const indexOptions = { name: "name" }; 
-    const result = await toysCollections.createIndex(indexKeys, indexOptions);
+    // const indexKeys = { name: 1 }; 
+    // const indexOptions = { name: "name" }; 
+    // const result = await toysCollections.createIndex(indexKeys, indexOptions);
+    
+    app.get("/allToys", async (req, res) => {
+      const result = await toysCollections.find().toArray();
+      res.send(result);
+    })
 
     app.get("/toys/:category", async (req, res) => {
       const category = req.params.category;
@@ -36,11 +50,7 @@ async function run() {
         return res.send(result)
       }
     })
-    app.get("/allToys", async (req, res) => {
-      const result = await toysCollections.find().toArray();
-      res.send(result);
-    })
-
+ 
     app.get("/toy/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -67,7 +77,7 @@ async function run() {
       if (req.query?.email) {
         query = { email: req.query.email }
       }
-      const result = await toysCollections.find(query).toArray();
+      const result = await toysCollections.find(query).sort({price:1}).toArray();
       res.send(result)
     })
     app.get("/searchItem/:name",async(req,res)=>{
